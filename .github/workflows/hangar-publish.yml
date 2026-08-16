@@ -1,0 +1,54 @@
+name: Build and publish to Hangar
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: Hangar release channel
+        required: false
+        default: Release
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Build with Maven
+        run: mvn -B package
+
+      - name: Determine version
+        id: version
+        run: |
+          RAW_VERSION="${{ github.event.release.tag_name || github.ref_name }}"
+          echo "version=${RAW_VERSION#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload to Hangar
+        uses: milkdrinkers/Hangar-Publish@v2
+        with:
+          api_token: ${{ secrets.HANGAR_TOKEN }}
+          slug: lan-announcer
+          version: ${{ steps.version.outputs.version }}
+          channel: ${{ github.event.inputs.channel || 'Release' }}
+          description: ${{ github.event.release.body }}
+          files: |
+            [
+              {
+                "path": "target/LanAnnouncer-*.jar",
+                "platforms": ["PAPER"]
+              }
+            ]
+          platform_dependencies: |
+            {
+              "PAPER": [">=26.2"]
+            }
