@@ -1,0 +1,8 @@
+# LanAnnouncer configuration.
+announce:
+  # Whether to broadcast this server as a "LAN world" so it shows up
+  # automatically in the multiplayer list of clients on the local network.
+  enabled: true
+  # The name advertised to LAN clients. Leave blank to fall back to the
+  # server's motd (server.properties / paper's motd setting).
+  server: ''

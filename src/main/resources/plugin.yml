@@ -1,0 +1,6 @@
+name: LanAnnouncer
+version: '${project.version}'
+main: gr.stei.lanannouncer.LanAnnouncer
+api-version: '26.2'
+author: steigr
+description: Broadcasts this server on the local network so it appears as a "LAN world" in the client multiplayer list.
