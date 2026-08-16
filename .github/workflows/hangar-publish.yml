@@ -1,14 +1,23 @@
 name: Build and publish to Hangar
 
 on:
+  push:
+    tags:
+      - 'v*'
   release:
     types: [published]
   workflow_dispatch:
     inputs:
+      tag:
+        description: Git tag to build and release (e.g. v1.0.0)
+        required: true
       channel:
         description: Hangar release channel
         required: false
         default: Release
+
+permissions:
+  contents: write
 
 jobs:
   build-and-publish:
@@ -16,6 +25,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -27,11 +38,24 @@ jobs:
       - name: Build with Maven
         run: mvn -B package
 
-      - name: Determine version
+      - name: Determine tag and version
         id: version
         run: |
-          RAW_VERSION="${{ github.event.release.tag_name || github.ref_name }}"
-          echo "version=${RAW_VERSION#v}" >> "$GITHUB_OUTPUT"
+          RAW_TAG="${{ github.event.release.tag_name || github.event.inputs.tag || github.ref_name }}"
+          echo "tag=${RAW_TAG}" >> "$GITHUB_OUTPUT"
+          echo "version=${RAW_TAG#v}" >> "$GITHUB_OUTPUT"
+
+      # Only when triggered by a bare tag push or manual dispatch — a "release: published"
+      # event means the release already exists, so skip creating a duplicate.
+      - name: Create GitHub release
+        if: github.event_name != 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          generate_release_notes: true
+          files: target/LanAnnouncer-*.jar
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload to Hangar
         uses: milkdrinkers/Hangar-Publish@v2
