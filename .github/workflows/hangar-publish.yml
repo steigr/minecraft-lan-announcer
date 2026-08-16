@@ -74,5 +74,5 @@ jobs:
             ]
           platform_dependencies: |
             {
-              "PAPER": [">=26.2"]
+              "PAPER": ["26.2"]
             }
